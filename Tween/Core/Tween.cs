@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System;
+using System.Collections;
 
 namespace Lofle.Tween
 {
@@ -8,7 +9,6 @@ namespace Lofle.Tween
 		public enum Style
 		{
 			Once,
-			Loop,
 			PingPong,
 		}
 
@@ -38,7 +38,7 @@ namespace Lofle.Tween
 
 		[Tooltip( "정방향 재생" )]
 		[SerializeField]
-		private bool _isForward = true;
+		private bool _bForward = true;
 
 		/// <summary>
 		/// 해당값이 false인 경우 From To를 시작기준을 1로 두면 안되고 0부터 처리 필요
@@ -50,24 +50,29 @@ namespace Lofle.Tween
 		[SerializeField]
 		private bool _isPlayOnStart = true;
 
-		protected bool _bStart = false;
+		[SerializeField]
+		private bool _bLoop = false;
+
 		private float _playTime = 0.0f;
 
+		private bool _bPingPongEnd = false;
+
 		public bool isAbsolute { get { return _isAbsolute; } set { _isAbsolute = value; } }
-		public bool isForward { get { return _isForward; } set { _isForward = value; } }
-		public bool isStart { get { return _bStart; } }
+		public bool isForward { get { return _bForward; } set { _bForward = value; } }
+		public bool isStart { get { return null != _update; } }
 		public float PlayTime { get { return _playTime; } }
 		public float TotalTime { get { return _totalTime; } set { _totalTime = value; } }
 		public AnimationCurve Curve { get { return _curve; } set { _curve = value; } }
 
 		public bool isPlayOnStart { get { return _isPlayOnStart; } set { _isPlayOnStart = value; } }
+		public bool isLoop { get { return _bLoop; } set { _bLoop = value; } }
 
 		void Start()
 		{
 			Init();
 			if( _isPlayOnStart )
 			{
-				Invoke();
+				Invoke( 0, null );
 			}
 		}
 
@@ -78,61 +83,85 @@ namespace Lofle.Tween
 			_style = source._style;
 			_curve = source._curve;
 			_totalTime = source._totalTime;
-			_isForward = source._isForward;
+			_bForward = source._bForward;
 			_isAbsolute = source._isAbsolute;
-			_isForward = source._isForward;
+			_bForward = source._bForward;
 		}
 
-		public void Invoke( float time = 0.0f )
+		private Coroutine _update = null;
+
+		private IEnumerator Play( Action callback )
 		{
-			_bStart = true;
+			bool bPlay = true;
+			while( bPlay )
+			{
+				_playTime += Time.smoothDeltaTime;
+				ListenUpdate( GetFactor( () => { bPlay = false; } ) );
+				yield return null;
+			}
+			InvokeStop();
+
+			if( null != callback )
+			{
+				callback();
+			}
+		}
+
+		public void PlayForward() { PlayForward( null ); }
+		public void PlayForward( Action callback )
+		{
+			if( !_bForward )
+			{
+				InvokeToggle( callback );
+			}
+			else
+			{
+				Invoke( 0, callback );
+			}
+		}
+
+		public void PlayReverse() { PlayReverse( null ); }
+		public void PlayReverse( Action callback )
+		{
+			if( _bForward )
+			{
+				InvokeToggle( callback );
+			}
+			else
+			{
+				Invoke( 0, callback );
+			}
+		}
+
+		private void InvokeToggle( Action callback )
+		{
+			Invoke( !_bForward, _totalTime - _playTime, callback );
+		}
+
+		private void Invoke( bool bForward, float time, Action callback )
+		{
+			_bForward = bForward;
+			Invoke( time, callback );
+		}
+
+		private void Invoke( float time, Action callback )
+		{
+			_bPingPongEnd = false;
 			_playTime = time;
 			enabled = true;
-		}
 
-		public void Invoke( bool duration, float time = 0.0f )
-		{
-			SetForward( duration );
-			Invoke( time );
-		}
-
-		public void InvokeForward()
-		{
-			if( !_isForward )
+			Debug.Log( $"_bForward {_bForward} / _playTime {_playTime}" );
+			if( null != _update )
 			{
-				InvokeToggle();
+				StopCoroutine( _update );
 			}
-			else
-			{
-				Invoke();
-			}
-		}
 
-		public void InvokeReverse()
-		{
-			if( _isForward )
-			{
-				InvokeToggle();
-			}
-			else
-			{
-				Invoke();
-			}
-		}
-
-		public void InvokeToggle()
-		{
-			Invoke( !_isForward, _totalTime- _playTime );
-		}
-
-		public void SetForward( bool duration )
-		{
-			_isForward = duration;
+			StartCoroutine( Play( callback ) );
 		}
 
 		public void InvokeStop()
 		{
-			_bStart = false;
+			_update = null;
 			enabled = false;
 		}
 
@@ -167,11 +196,11 @@ namespace Lofle.Tween
 			}
 		}
 
-		private float GetFactor()
+		private float GetFactor( Action stop )
 		{
 			float result = 0.0f;
 
-			if( _isForward )
+			if( _bForward )
 			{
 				result = (_playTime) / _totalTime;
 			}
@@ -180,11 +209,9 @@ namespace Lofle.Tween
 				result = (_totalTime - (_playTime)) / _totalTime;
 			}
 
-			if( IsEnd( result ) )
+			if( isEnd( result ) )
 			{
-				InvokeStop();
-
-				if( _isForward )
+				if( _bForward )
 				{
 					result = 1.0f;
 				}
@@ -192,21 +219,22 @@ namespace Lofle.Tween
 				{
 					result = 0.0f;
 				}
+				stop();
 			}
 
 			return _curve.Evaluate( result );
 		}
 
-		private bool IsEnd( float value )
+		private bool isEnd( float value )
 		{
 			bool result = false;
 
-			result = _isForward ? IsForward( value ) : IsReverse( value );
+			result = _bForward ? isForwardEnd( value ) : isReverseEnd( value );
 
 			if( result )
 			{
 				InvokeCallbackEnd();
-				InvokeCallback( _isForward );
+				InvokeCallback( _bForward );
 
 				switch( _style )
 				{
@@ -216,44 +244,41 @@ namespace Lofle.Tween
 						}
 						break;
 
-					case Style.Loop:
-						{
-							_playTime = 0.0f;
-							result = false;
-						}
-						break;
-
 					case Style.PingPong:
 						{
-							_isForward = !_isForward;
+							if( _bLoop || !_bPingPongEnd )
+							{
+								_bForward = !_bForward;
 
-							_playTime = 0.0f;
-							result = false;
+								_playTime = 0.0f;
+								result = false;
+
+								_bPingPongEnd = true;
+							}
 						}
 						break;
 				}
+
+				if( _bLoop )
+				{
+					_playTime = 0.0f;
+					result = false;
+				}
 			}
+
 			return result;
 		}
 
-		private bool IsForward( float value )
+		private bool isForwardEnd( float value )
 		{
 			return (1.0f <= value);
 		}
 
-		private bool IsReverse( float value )
+		private bool isReverseEnd( float value )
 		{
 			return (value <= 0.0f);
 		}
 
-		void Update()
-		{
-			if( _bStart )
-			{
-				_playTime += Time.smoothDeltaTime;
-				ListenUpdate( GetFactor() );
-			}
-		}
 		virtual protected void ListenUpdate( float factor ) { }
 	}
 }

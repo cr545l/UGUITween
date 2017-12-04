@@ -26,8 +26,8 @@ public class ButtonTweenInspector : Editor
 			tween.TotalTime = 0.2f;
 			tween.Curve = AnimationCurve.EaseInOut( 0, 0, 1, 1 );
 
-			UnityEventTools.AddPersistentListener( buttonEvent.EventOnPointerDown, tween.InvokeForward );
-			UnityEventTools.AddPersistentListener( buttonEvent.EventOnPointerUp, tween.InvokeReverse );
+			UnityEventTools.AddPersistentListener( buttonEvent.EventOnPointerDown, tween.PlayForward );
+			UnityEventTools.AddPersistentListener( buttonEvent.EventOnPointerUp, tween.PlayReverse );
 		}
 
 		GUI.enabled = null == buttonEvent.GetComponent<TweenRotation>();
@@ -37,8 +37,8 @@ public class ButtonTweenInspector : Editor
 			tween.isPlayOnStart = false;
 			tween.To = new Vector3( 1, 1, 1 );
 
-			UnityEventTools.AddPersistentListener( buttonEvent.EventOnPointerDown, tween.InvokeForward );
-			UnityEventTools.AddPersistentListener( buttonEvent.EventOnPointerUp, tween.InvokeReverse );
+			UnityEventTools.AddPersistentListener( buttonEvent.EventOnPointerDown, tween.PlayForward );
+			UnityEventTools.AddPersistentListener( buttonEvent.EventOnPointerUp, tween.PlayReverse );
 		}
 
 		GUI.enabled = null == buttonEvent.GetComponent<TweenPosition>();
@@ -48,8 +48,8 @@ public class ButtonTweenInspector : Editor
 			tween.isPlayOnStart = false;
 			tween.To = new Vector3( 1, 1, 1 );
 
-			UnityEventTools.AddPersistentListener( buttonEvent.EventOnPointerDown, tween.InvokeForward );
-			UnityEventTools.AddPersistentListener( buttonEvent.EventOnPointerUp, tween.InvokeReverse );
+			UnityEventTools.AddPersistentListener( buttonEvent.EventOnPointerDown, tween.PlayForward );
+			UnityEventTools.AddPersistentListener( buttonEvent.EventOnPointerUp, tween.PlayReverse );
 		}
 
 		GUI.enabled = null == buttonEvent.GetComponent<UITweenColorAlpha>();
@@ -58,8 +58,8 @@ public class ButtonTweenInspector : Editor
 			var tween = buttonEvent.gameObject.AddComponent<UITweenColorAlpha>();
 			tween.isPlayOnStart = false;
 
-			UnityEventTools.AddPersistentListener( buttonEvent.EventOnPointerDown, tween.InvokeForward );
-			UnityEventTools.AddPersistentListener( buttonEvent.EventOnPointerUp, tween.InvokeReverse );
+			UnityEventTools.AddPersistentListener( buttonEvent.EventOnPointerDown, tween.PlayForward );
+			UnityEventTools.AddPersistentListener( buttonEvent.EventOnPointerUp, tween.PlayReverse );
 		}
 
 		GUI.enabled = null == buttonEvent.GetComponent<TweenTransform>();
@@ -68,8 +68,8 @@ public class ButtonTweenInspector : Editor
 			var tween = buttonEvent.gameObject.AddComponent<TweenTransform>();
 			tween.isPlayOnStart = false;
 
-			UnityEventTools.AddPersistentListener( buttonEvent.EventOnPointerDown, tween.InvokeForward );
-			UnityEventTools.AddPersistentListener( buttonEvent.EventOnPointerUp, tween.InvokeReverse );
+			UnityEventTools.AddPersistentListener( buttonEvent.EventOnPointerDown, tween.PlayForward );
+			UnityEventTools.AddPersistentListener( buttonEvent.EventOnPointerUp, tween.PlayReverse );
 		}
 
 		GUILayout.EndHorizontal();
