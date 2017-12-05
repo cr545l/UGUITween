@@ -57,9 +57,11 @@ namespace Lofle.Tween
 
 		private bool _bPingPongEnd = false;
 
+		private Coroutine _update = null;
+
 		public bool isAbsolute { get { return _isAbsolute; } set { _isAbsolute = value; } }
 		public bool isForward { get { return _bForward; } set { _bForward = value; } }
-		public bool isStart { get { return null != _update; } }
+		public bool isPlay { get { return null != _update; } }
 		public float PlayTime { get { return _playTime; } }
 		public float TotalTime { get { return _totalTime; } set { _totalTime = value; } }
 		public AnimationCurve Curve { get { return _curve; } set { _curve = value; } }
@@ -87,8 +89,6 @@ namespace Lofle.Tween
 			_isAbsolute = source._isAbsolute;
 			_bForward = source._bForward;
 		}
-
-		private Coroutine _update = null;
 
 		private IEnumerator Play( Action callback )
 		{
@@ -155,8 +155,11 @@ namespace Lofle.Tween
 			{
 				StopCoroutine( _update );
 			}
-
-			StartCoroutine( Play( callback ) );
+			
+			if( gameObject.activeInHierarchy )
+			{
+				_update = StartCoroutine( Play( callback ) );
+			}
 		}
 
 		public void InvokeStop()
