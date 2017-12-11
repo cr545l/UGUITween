@@ -12,11 +12,11 @@ namespace Lofle.Tween
 			PingPong,
 		}
 
-		public enum Direction
+		public enum eDirection
 		{
-			Reverse = -1,
-			Toggle = 0,
-			Forward = 1,
+			None,
+			Forwarded,
+			Reversed,
 		}
 
 		public event Action _eventEndForward = null;
@@ -53,15 +53,18 @@ namespace Lofle.Tween
 		[SerializeField]
 		private bool _bLoop = false;
 
-		private float _playTime = 0.0f;
-
-		private bool _bPingPongEnd = false;
-
 		private Coroutine _update = null;
+
+		private float _playTime = 0.0f;
+		private bool _bPingPongEnd = false;
+		private bool _bPlayReservation = false;
+
+		private eDirection _endDirection = eDirection.None;
 
 		public bool isAbsolute { get { return _isAbsolute; } set { _isAbsolute = value; } }
 		public bool isForward { get { return _bForward; } set { _bForward = value; } }
-		public bool isPlay { get { return null != _update; } }
+		public bool isPlaying { get { return null != _update; } }
+		public bool isEnded { get { return !isPlaying; } }
 		public float PlayTime { get { return _playTime; } }
 		public float TotalTime { get { return _totalTime; } set { _totalTime = value; } }
 		public AnimationCurve Curve { get { return _curve; } set { _curve = value; } }
@@ -69,7 +72,7 @@ namespace Lofle.Tween
 		public bool isPlayOnStart { get { return _isPlayOnStart; } set { _isPlayOnStart = value; } }
 		public bool isLoop { get { return _bLoop; } set { _bLoop = value; } }
 
-		void Start()
+		void Awake()
 		{
 			Init();
 			if( _isPlayOnStart )
@@ -92,6 +95,8 @@ namespace Lofle.Tween
 
 		private IEnumerator Play( Action callback )
 		{
+			_bPlayReservation = false;
+
 			bool bPlay = true;
 			while( bPlay )
 			{
@@ -104,6 +109,18 @@ namespace Lofle.Tween
 			if( null != callback )
 			{
 				callback();
+			}
+		}
+
+		public void Play( bool bForward )
+		{
+			if( bForward )
+			{
+				PlayForward();
+			}
+			else
+			{
+				PlayReverse();
 			}
 		}
 
@@ -143,14 +160,13 @@ namespace Lofle.Tween
 			_bForward = bForward;
 			Invoke( time, callback );
 		}
-
+		
 		private void Invoke( float time, Action callback )
 		{
 			_bPingPongEnd = false;
 			_playTime = time;
 			enabled = true;
-
-			Debug.Log( $"_bForward {_bForward} / _playTime {_playTime}" );
+			
 			if( null != _update )
 			{
 				StopCoroutine( _update );
@@ -159,6 +175,10 @@ namespace Lofle.Tween
 			if( gameObject.activeInHierarchy )
 			{
 				_update = StartCoroutine( Play( callback ) );
+			}
+			else
+			{
+				Debug.LogWarningFormat( "{0} 현재 해당 게임 오브젝트가 비활성 상태로 동작을 실패함, Active를 true로 변경 필요", gameObject.name );
 			}
 		}
 
@@ -187,6 +207,7 @@ namespace Lofle.Tween
 			{
 				if( null != _eventEndForward )
 				{
+					_endDirection = eDirection.Forwarded;
 					_eventEndForward.Invoke();
 				}
 			}
@@ -194,6 +215,7 @@ namespace Lofle.Tween
 			{
 				if( null != _eventEndReverse )
 				{
+					_endDirection = eDirection.Reversed;
 					_eventEndReverse.Invoke();
 				}
 			}

@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 namespace Lofle.Tween
 {
@@ -8,36 +9,30 @@ namespace Lofle.Tween
 	{
 		private float _alpha = 0.0f;
 
-		private Image[] _findImages = null;
-		private Text[] _findtexts = null;
+		private List<KeyValuePair<MaskableGraphic, float>> _list = new List<KeyValuePair<MaskableGraphic, float>>();
 
 		override protected void GenericInInit()
 		{
-			_findImages = gameObject.GetComponentsInChildren<Image>();
-			_findtexts = gameObject.GetComponentsInChildren<Text>();
+			Find( gameObject.GetComponentsInChildren<MaskableGraphic>() );
 		}
 
 		override protected void SetValue( float value )
 		{
 			_alpha = value;
-
-			SetImageAlpha( _alpha );
-			SetTextAlpha( _alpha );
+			
+			Set( value );
 		}
 
-		private void SetImageAlpha( float value )
+		private void Set( float value )
 		{
-			for( int i = 0; i < _findImages.Length; i++ )
-			{
-				_findImages[i].color = new Color( _findImages[i].color.r, _findImages[i].color.g, _findImages[i].color.b, value );
-			}
+			_list.ForEach( x => x.Key.color = new Color( x.Key.color.r, x.Key.color.g, x.Key.color.b, x.Value * value ) );
 		}
 
-		private void SetTextAlpha( float value )
+		private void Find<T>( T[] find ) where T : MaskableGraphic
 		{
-			for( int i = 0; i < _findtexts.Length; i++ )
+			foreach( var i in find )
 			{
-				_findtexts[i].color = new Color( _findtexts[i].color.r, _findtexts[i].color.g, _findtexts[i].color.b, value );
+				_list.Add( new KeyValuePair<MaskableGraphic, float>( i, i.color.a ) );
 			}
 		}
 
